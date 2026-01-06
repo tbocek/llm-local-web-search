@@ -1,0 +1,301 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>LLM Search - Settings</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                font-family: system-ui, sans-serif;
+                font-size: 0.875rem;
+                color: #333;
+                background: #f7fafc;
+                margin: 0;
+                padding: 1.5rem;
+            }
+            .container {
+                max-width: 37.5rem;
+                margin: 0 auto;
+            }
+            h1 {
+                font-size: 1.5rem;
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+                color: #2d3748;
+            }
+            .subtitle {
+                color: #718096;
+                margin-bottom: 1.5rem;
+            }
+            .card {
+                background: white;
+                border-radius: 0.5rem;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+            }
+            .card-title {
+                font-size: 1rem;
+                font-weight: 600;
+                margin-bottom: 1rem;
+                color: #2d3748;
+            }
+            .form-group {
+                margin-bottom: 1rem;
+            }
+            .form-group:last-child {
+                margin-bottom: 0;
+            }
+            label {
+                display: flex;
+                align-items: flex-start;
+                cursor: pointer;
+            }
+            input[type="checkbox"] {
+                margin-right: 0.75rem;
+                margin-top: 0.125rem;
+                width: 1.125rem;
+                height: 1.125rem;
+            }
+            .label-content {
+                flex: 1;
+            }
+            .label-title {
+                font-weight: 500;
+                margin-bottom: 0.125rem;
+            }
+            .label-hint {
+                font-size: 0.75rem;
+                color: #718096;
+            }
+            .label-hint a {
+                color: #4299e1;
+            }
+            input[type="number"] {
+                width: 4.5rem;
+                margin-right: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+            .url-list {
+                margin-top: 0.5rem;
+            }
+            .url-item {
+                display: flex;
+                align-items: center;
+                margin-bottom: 0.5rem;
+            }
+            .url-item input[type="text"] {
+                flex: 1;
+                padding: 0.5rem 0.75rem;
+                border: 1px solid #e2e8f0;
+                border-radius: 0.25rem;
+                font-size: 0.8125rem;
+            }
+            .url-item input[type="text"]:focus {
+                outline: none;
+                border-color: #4299e1;
+                box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+            }
+            .url-item button {
+                margin-left: 0.5rem;
+                padding: 0.5rem 0.75rem;
+                border: none;
+                border-radius: 0.25rem;
+                cursor: pointer;
+                font-size: 0.8125rem;
+            }
+            .url-item .remove-btn {
+                background: #fed7d7;
+                color: #c53030;
+            }
+            .url-item .remove-btn:hover {
+                background: #feb2b2;
+            }
+            .add-url-btn {
+                background: #e2e8f0;
+                color: #4a5568;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: 0.25rem;
+                cursor: pointer;
+                font-size: 0.8125rem;
+            }
+            .add-url-btn:hover {
+                background: #cbd5e0;
+            }
+            .save-section {
+                display: flex;
+                justify-content: flex-end;
+                gap: 0.75rem;
+                margin-top: 1.5rem;
+            }
+            .save-btn {
+                background: #4299e1;
+                color: white;
+                border: none;
+                padding: 0.625rem 1.5rem;
+                border-radius: 0.375rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                cursor: pointer;
+            }
+            .save-btn:hover {
+                background: #3182ce;
+            }
+            .reset-btn {
+                background: #e2e8f0;
+                color: #4a5568;
+                border: none;
+                padding: 0.625rem 1.5rem;
+                border-radius: 0.375rem;
+                font-size: 0.875rem;
+                font-weight: 500;
+                cursor: pointer;
+            }
+            .reset-btn:hover {
+                background: #cbd5e0;
+            }
+            .toast {
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background: #48bb78;
+                color: white;
+                padding: 0.75rem 1.5rem;
+                border-radius: 0.375rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                opacity: 0;
+                transform: translateY(0.625rem);
+                transition:
+                    opacity 0.2s,
+                    transform 0.2s;
+            }
+            .toast.show {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>LLM Search Settings</h1>
+            <p class="subtitle">Configure the LLM web search extension</p>
+
+            <div class="card">
+                <div class="card-title">General</div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="incognitoMode" />
+                        <div class="label-content">
+                            <div class="label-title">Run in Private Mode</div>
+                            <div class="label-hint">
+                                Open search results in private/incognito windows
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="autoClose" />
+                        <div class="label-content">
+                            <div class="label-title">
+                                Auto-close Window on Success
+                            </div>
+                            <div class="label-hint">
+                                Automatically close the search window after
+                                content is extracted
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">URLs to Inject Tools</div>
+                <div class="label-hint" style="margin-bottom: 0.75rem">
+                    URL patterns where the extension intercepts LLM API calls.
+                    Use <code>*</code> as wildcard.
+                </div>
+
+                <div class="url-list" id="urlList"></div>
+                <button class="add-url-btn" id="addUrlBtn">
+                    + Add URL Pattern
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Search Settings</div>
+
+                <div class="form-group">
+                    <label>
+                        <input
+                            type="number"
+                            id="maxResults"
+                            min="1"
+                            max="10"
+                        />
+                        <div class="label-content">
+                            <div class="label-title">Maximum Results</div>
+                            <div class="label-hint">
+                                Number of search results to fetch (1-10)
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input
+                            type="number"
+                            id="extractTimeout"
+                            min="5"
+                            max="60"
+                        />
+                        <div class="label-content">
+                            <div class="label-title">
+                                Extraction Timeout (seconds)
+                            </div>
+                            <div class="label-hint">
+                                Time before auto-submitting results
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input
+                        type="number"
+                        id="extractDelay"
+                        min="1000"
+                        max="10000"
+                        step="500"
+                    />
+                    <div class="label-content">
+                        <div class="label-title">Extract Delay (ms)</div>
+                        <div class="label-hint">
+                            Time to wait for page to load before extracting
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <div class="save-section">
+                <button class="reset-btn" id="resetBtn">
+                    Reset to Defaults
+                </button>
+                <button class="save-btn" id="saveBtn">Save Settings</button>
+            </div>
+        </div>
+
+        <div class="toast" id="toast">Settings saved!</div>
+
+        <script src="config.js"></script>
+        <script src="options.js"></script>
+    </body>
+</html>
