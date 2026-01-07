@@ -1,4 +1,4 @@
-# LLM Web Search Extension
+# LLM Web Search Extension - llm-local-web-search
 
 Firefox extension (prototype) that intercepts OpenAI-compatible API calls and adds client-side web search capability.
 

@@ -1,8 +1,8 @@
 {
-  "name": "llm-web-search",
+  "name": "llm-local-web-search",
   "version": "0.1",
-  "repository": "https://github.com/tbocek/llm-web-search.git",
-  "author": "Thomas Bocek <tom.llm-web-search@bocek.ch>",
+  "repository": "https://github.com/tbocek/llm-local-web-search.git",
+  "author": "Thomas Bocek <tom.llm-local-web-search@bocek.ch>",
   "license": "MIT",
   "scripts": {
     "lint": "web-ext lint --source-dir ./src",
