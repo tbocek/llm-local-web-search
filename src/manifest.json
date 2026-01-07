@@ -1,13 +1,9 @@
 {
   "manifest_version": 2,
   "name": "LLM Interceptor for Local Web Searches",
-  "version": "1.0",
-  "description": "Firefox extension that adds client-side web search to local LLMs. Intercepts OpenAI-compatible API calls, injects a web_search tool, and fetches results directly in your browser. Solve captchas yourself, bypass server-side fetch errors, works offline with llama.cpp",
-  "permissions": [
-    "<all_urls>",
-    "storage",
-    "tabs"
-  ],
+  "version": "0.1",
+  "description": "Firefox extension that adds client-side web search for local LLMs. Intercepts OpenAI-compatible API calls, injects a web_search tool call, and fetches results directly in your browser. See what is going on, solve captchas yourself, bypass server-side fetch errors, works offline with llama.cpp",
+  "permissions": ["http://*/*", "https://*/*", "storage", "tabs"],
   "browser_action": {
     "default_icon": "icon.svg",
     "default_title": "LLM Search"
@@ -18,17 +14,17 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["http://*/*", "https://*/*"],
       "js": ["content.js"],
       "run_at": "document_start"
     },
     {
-      "matches": ["*://duckduckgo.com/*"],
+      "matches": ["https://duckduckgo.com/*"],
       "js": ["duckduckgo.js"],
       "run_at": "document_idle"
     },
     {
-      "matches": ["<all_urls>"],
+      "matches": ["http://*/*", "https://*/*"],
       "js": ["Readability.js", "extractor.js"],
       "run_at": "document_idle"
     }
@@ -39,7 +35,10 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "llm-search@local"
+      "id": "llm-search@local",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "sidebar_action": {

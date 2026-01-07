@@ -19,15 +19,6 @@
     error: "Error",
   };
 
-  function escapeHtml(text) {
-    return text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
   function updateUI(state) {
     const stateJSON = JSON.stringify(state);
     if (stateJSON === lastStateJSON) return;
@@ -55,20 +46,39 @@
     $("siteTotal").textContent = sites.length;
 
     if (sites.length) {
-      $("sitesList").innerHTML = sites
-        .map(
-          (site, i) => `
-        <div class="site-item" data-tab-id="${site.tabId || ""}">
-          <div class="site-index">${i + 1}</div>
-          <div class="site-info">
-          <div class="site-title">${escapeHtml(site.title || "Loading...")}</div>
-            <div class="site-url">${new URL(site.url).hostname}</div>
-          </div>
-          <span class="site-status ${site.status}">${STATUS_LABELS[site.status] || site.status}</span>
-        </div>
-      `,
-        )
-        .join("");
+      $("sitesList").textContent = "";
+      sites.forEach((site, i) => {
+        const item = document.createElement("div");
+        item.className = "site-item";
+        item.dataset.tabId = site.tabId || "";
+
+        const index = document.createElement("div");
+        index.className = "site-index";
+        index.textContent = i + 1;
+
+        const info = document.createElement("div");
+        info.className = "site-info";
+
+        const title = document.createElement("div");
+        title.className = "site-title";
+        title.textContent = site.title || "Loading...";
+
+        const url = document.createElement("div");
+        url.className = "site-url";
+        url.textContent = new URL(site.url).hostname;
+
+        const status = document.createElement("span");
+        status.className = "site-status " + site.status;
+        status.textContent = STATUS_LABELS[site.status] || site.status;
+
+        info.appendChild(title);
+        info.appendChild(url);
+        item.appendChild(index);
+        item.appendChild(info);
+        item.appendChild(status);
+
+        $("sitesList").appendChild(item);
+      });
 
       $("sitesList")
         .querySelectorAll(".site-item")
@@ -83,7 +93,11 @@
           });
         });
     } else {
-      $("sitesList").innerHTML = `<div class="empty-state">No searches</div>`;
+      $("sitesList").textContent = "";
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "No searches";
+      $("sitesList").appendChild(empty);
     }
 
     // Buttons

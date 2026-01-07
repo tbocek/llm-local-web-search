@@ -1,6 +1,6 @@
 # LLM Web Search Extension
 
-Firefox extension that intercepts OpenAI-compatible API calls and adds client-side web search capability.
+Firefox extension (prototype) that intercepts OpenAI-compatible API calls and adds client-side web search capability.
 
 ## Motivation
 
@@ -35,8 +35,14 @@ For development:
 
 1. Clone with `git clone https://github.com/tbocek/llm-web-search`
 1. Open in Firefox `about:debugging#/runtime/this-firefox`
-2. Click "Load Temporary Add-on"
-3. Select `manifest.json`
+1. Click "Load Temporary Add-on"
+1. Select `manifest.json`
+
+Build package/zip locally:
+
+```
+npx web-ext build --source-dir ./src -a ./bin
+```
 
 ## Configuration
 
@@ -53,7 +59,7 @@ Settings available in extension options:
 
 ## Dependencies
 
-- [Readability.js](https://github.com/mozilla/readability) (Apache-2.0)
+- [Readability.js](https://github.com/mozilla/readability) (Apache-2.0, hard-copied for protoyping)
 
 ## Acknowledgments
 

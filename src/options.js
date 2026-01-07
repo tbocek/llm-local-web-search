@@ -58,15 +58,25 @@
 
   // Render URL list
   function renderUrlList() {
-    urlList.innerHTML = "";
+    urlList.textContent = "";
 
     urlPatterns.forEach((url, index) => {
       const item = document.createElement("div");
       item.className = "url-item";
-      item.innerHTML = `
-        <input type="text" value="${escapeHtml(url)}" data-index="${index}" placeholder="http://127.0.0.1:*/*">
-        <button class="remove-btn" data-index="${index}">Remove</button>
-      `;
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = url;
+      input.dataset.index = index;
+      input.placeholder = "http://127.0.0.1:*/*";
+
+      const btn = document.createElement("button");
+      btn.className = "remove-btn";
+      btn.dataset.index = index;
+      btn.textContent = "Remove";
+
+      item.appendChild(input);
+      item.appendChild(btn);
       urlList.appendChild(item);
     });
 
