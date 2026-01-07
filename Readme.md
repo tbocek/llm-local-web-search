@@ -27,6 +27,22 @@ By disabling auto-close, you can inspect what was searched. The sidebar shows an
 
 To use private windows, enable it in extension settings. You must also allow the extension to run in private mode: about:addons -> Extension -> Permissions -> "Run in Private Windows".
 
+## Screenshots
+
+<img src="screenshot1.png" width="50%">
+
+The sidebar (left) shows the status for each search result. Sites are numbered 1-10 with status indicators: Loaded (green), Loading (blue), or Blocked (red). The DuckDuckGo search window (right) opens automatically and displays the original query. Each result URL opens in a separate tab where Readability.js extracts the main content. You can click any sidebar item to jump to that tab, solve captchas, or navigate manually if needed.
+
+<img src="screenshot2.png" width="25%">
+
+After extraction completes, the search window closes and results are sent back to the LLM. The model receives the extracted text content from each page and synthesizes an answer. Here, a search for "test" returned internet speed testing tools, and the LLM summarized the top results with relevant details from the actual page content.
+
+## Demo
+
+[![Watch demo on YouTube](screenshot3.png)](https://www.youtube.com/watch?v=K7j7BiFv178)
+
+Click image to watch the demo on YouTube
+
 ## Installation
 
 This extension is available from the addon page (todo)
