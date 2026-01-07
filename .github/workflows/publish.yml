@@ -27,16 +27,8 @@ jobs:
       - name: Bump version
         id: version
         run: |
-          CURRENT=$(jq -r '.version' package.json)
-          IFS='.' read -r MAJOR MINOR <<< "$CURRENT"
-          if [ "${{ inputs.bump }}" = "major" ]; then
-            NEW="$((MAJOR + 1)).0"
-          else
-            NEW="${MAJOR}.$((MINOR + 1))"
-          fi
+          NEW=$(bash ./version-bump.sh ${{ inputs.bump }})
           echo "version=$NEW" >> $GITHUB_OUTPUT
-          jq --arg v "$NEW" '.version = $v' package.json > tmp && mv tmp package.json
-          jq --arg v "$NEW" '.version = $v' src/manifest.json > tmp && mv tmp src/manifest.json
       - run: pnpm lint
       - name: Commit, tag, and push
         run: |
