@@ -138,6 +138,15 @@
     }
     .status-badge.active { background: #d1fae5; color: #065f46; }
     .status-badge.error { background: #fee2e2; color: #991b1b; }
+    #userNote {
+      width: calc(100% - 1rem);
+      margin: 0 0.5rem 0.5rem 0.5rem;
+      padding: 0.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      resize: none;
+    }
   </style>
 </head>
 <body>
@@ -145,6 +154,8 @@
   <div class="sites-list" id="sitesList">
     <div class="empty-state">No searches</div>
   </div>
+  
+  <textarea id="userNote" placeholder="Additional instructions (optional)..." rows="2"></textarea>
 
   <div class="footer">
     <div class="footer-buttons">

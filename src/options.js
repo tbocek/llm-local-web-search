@@ -1,16 +1,21 @@
 (function () {
   const incognitoMode = document.getElementById("incognitoMode");
-  const autoClose = document.getElementById("autoClose");
   const maxResults = document.getElementById("maxResults");
-  const extractTimeout = document.getElementById("extractTimeout");
   const urlList = document.getElementById("urlList");
   const addUrlBtn = document.getElementById("addUrlBtn");
-  const saveBtn = document.getElementById("saveBtn");
   const resetBtn = document.getElementById("resetBtn");
-  const toast = document.getElementById("toast");
+  const savedIndicator = document.getElementById("savedIndicator");
   const extractDelay = document.getElementById("extractDelay");
 
   let urlPatterns = [];
+
+  function debounce(fn, ms) {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => fn(...args), ms);
+    };
+  }
 
   // Load settings
   async function loadSettings() {
@@ -18,41 +23,36 @@
     const settings = result.settings || DEFAULT_SETTINGS;
 
     incognitoMode.checked = settings.incognitoMode;
-    autoClose.checked = settings.autoClose;
     maxResults.value = settings.maxResults;
-    extractTimeout.value = settings.extractTimeout;
     urlPatterns = settings.urlPatterns;
     extractDelay.value = settings.extractDelay;
 
     renderUrlList();
-    updateTimeoutVisibility();
   }
 
   // Save settings
   async function saveSettings() {
     const settings = {
       incognitoMode: incognitoMode.checked,
-      autoClose: autoClose.checked,
-      maxResults: parseInt(maxResults.value) || 10,
-      extractTimeout: parseInt(extractTimeout.value) || 10,
-      extractDelay: parseInt(extractDelay.value) || 3000,
+      maxResults: parseInt(maxResults.value) || DEFAULT_SETTINGS.maxResults,
+      extractDelay:
+        parseInt(extractDelay.value) || DEFAULT_SETTINGS.extractDelay,
       urlPatterns: urlPatterns.filter((u) => u.trim()),
     };
 
     await browser.storage.local.set({ settings });
-
-    // Notify background script
     browser.runtime.sendMessage({ type: "settingsUpdated", settings });
-
-    showToast();
+    showSaved();
   }
+
+  const debouncedSave = debounce(saveSettings, 500);
 
   // Reset to defaults
   async function resetSettings() {
     if (confirm("Reset all settings to defaults?")) {
       await browser.storage.local.set({ settings: DEFAULT_SETTINGS });
       await loadSettings();
-      showToast();
+      showSaved();
     }
   }
 
@@ -84,6 +84,7 @@
       input.addEventListener("input", (e) => {
         const index = parseInt(e.target.dataset.index);
         urlPatterns[index] = e.target.value;
+        debouncedSave();
       });
     });
 
@@ -92,6 +93,7 @@
         const index = parseInt(e.target.dataset.index);
         urlPatterns.splice(index, 1);
         renderUrlList();
+        debouncedSave();
       });
     });
   }
@@ -130,36 +132,25 @@
             "3. Enable 'Run in Private Windows' on the Details tab\n" +
             "4. Return here and try again",
         );
+        return;
       }
     }
+    debouncedSave();
   }
 
-  // Show/hide timeout setting based on autoClose
-  function updateTimeoutVisibility() {
-    const timeoutGroup = extractTimeout.closest(".form-group");
-    timeoutGroup.style.display = autoClose.checked ? "block" : "none";
-  }
-
-  // Show toast
-  function showToast() {
-    toast.classList.add("show");
+  // Show saved indicator
+  function showSaved() {
+    savedIndicator.classList.add("show");
     setTimeout(() => {
-      toast.classList.remove("show");
+      savedIndicator.classList.remove("show");
     }, 2000);
-  }
-
-  // Escape HTML
-  function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   // Event listeners
   incognitoMode.addEventListener("change", handleIncognitoToggle);
-  autoClose.addEventListener("change", updateTimeoutVisibility);
+  maxResults.addEventListener("input", debouncedSave);
+  extractDelay.addEventListener("input", debouncedSave);
   addUrlBtn.addEventListener("click", addUrl);
-  saveBtn.addEventListener("click", saveSettings);
   resetBtn.addEventListener("click", resetSettings);
 
   // Initial load

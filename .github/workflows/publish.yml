@@ -1,14 +1,6 @@
 name: Publish to AMO
 on:
   workflow_dispatch:
-    inputs:
-      bump:
-        description: "Version bump"
-        required: true
-        type: choice
-        options:
-          - minor
-          - major
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -27,7 +19,7 @@ jobs:
       - name: Bump version
         id: version
         run: |
-          NEW=$(bash ./version-bump.sh ${{ inputs.bump }})
+          NEW=$(bash ./version-bump.sh minor)
           echo "version=$NEW" >> $GITHUB_OUTPUT
       - run: pnpm lint
       - name: Commit, tag, and push

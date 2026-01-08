@@ -1,15 +1,12 @@
 (async function () {
   const toolsUrl = document.currentScript.dataset.toolsUrl;
-  const autoClose = document.currentScript.dataset.autoClose !== "false";
 
   const toolsResponse = await fetch(toolsUrl);
   const tools = await toolsResponse.json();
 
   console.log("[Injected] Loaded tools:", tools);
-  console.log("[Injected] Auto-close:", autoClose);
 
-  // Timeout: 10s if autoClose, 600s if manual
-  const SEARCH_TIMEOUT = autoClose ? 10000 : 600000;
+  const SEARCH_TIMEOUT = 600000;
 
   let searchId = 0;
   const pendingSearches = new Map();
@@ -20,7 +17,7 @@
 
       const timeout = setTimeout(() => {
         pendingSearches.delete(id);
-        resolve([{ title: "Timeout", url: "", content: "Search timed out" }]);
+        resolve({ results: [{ title: "Timeout", url: "", content: "Search timed out" }], userNote: "" });
       }, SEARCH_TIMEOUT);
 
       pendingSearches.set(id, { resolve, timeout });
@@ -36,7 +33,10 @@
       if (pending) {
         clearTimeout(pending.timeout);
         pendingSearches.delete(id);
-        pending.resolve(event.data.results);
+        pending.resolve({
+          results: event.data.results,
+          userNote: event.data.userNote,
+        });
       }
     }
   });
@@ -79,12 +79,11 @@
           const args = JSON.parse(call.function.arguments);
           console.log("[Injected] Web search:", args.query);
 
-          const results = await performSearch(args.query);
+          const { results, userNote } = await performSearch(args.query);
 
-          const resultText = results
-            .map(
-              (r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.content}\n`,
-            )
+          const prefix = userNote ? `User note: ${userNote}\n\n` : "";
+          const resultText = prefix + results
+            .map((r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.content}\n`)
             .join("\n---\n");
 
           console.log("[Injected] Sending results to LLM");

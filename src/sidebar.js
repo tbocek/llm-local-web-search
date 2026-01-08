@@ -104,11 +104,16 @@
     $("submitBtn").disabled =
       (state.status !== "ready" && state.status !== "extracting") ||
       loadedCount === 0;
+    
+    if (state.status === "idle") {
+      $("userNote").value = "";
+    }
   }
 
   $("submitBtn").addEventListener("click", () => {
+    const note = $("userNote").value.trim();
     browser.sidebarAction.close();
-    browser.runtime.sendMessage({ type: "forceSubmit" });
+    browser.runtime.sendMessage({ type: "submit", userNote: note });
   });
 
   $("cancelBtn").addEventListener("click", () => {

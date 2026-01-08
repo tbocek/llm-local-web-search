@@ -52,52 +52,7 @@ async function onExtractionComplete() {
     clearTimeout(completionTimeout);
     completionTimeout = null;
   }
-
-  if (settings.autoClose) {
-    await submitToLLM();
-  } else {
-    updateState({ status: "ready" });
-    console.log("[Background] Ready - waiting for manual submit");
-  }
-}
-
-async function submitToLLM() {
-  const validResults = Array.from(collectedContent.values()).filter(
-    (r) => !r.blocked && r.content.length > 0,
-  );
-  console.log(
-    "[Background] Submitting",
-    validResults.length,
-    "valid results to LLM",
-  );
-
-  updateState({ status: "complete" });
-  browser.browserAction.setIcon({ path: "icon.svg" });
-
-  if (settings.autoClose && searchWindow) {
-    try {
-      await browser.windows.remove(searchWindow.windowId);
-    } catch (e) {}
-    searchWindow = null;
-  }
-
-  if (originTabId) {
-    try {
-      await browser.tabs.sendMessage(originTabId, {
-        type: "searchComplete",
-        results: validResults,
-        searchId: currentSearchId,
-      });
-    } catch (e) {
-      console.log("[Background] Error sending results:", e);
-    }
-  }
-
-  expectedCount = 0;
-  collectedContent.clear();
-  trackedTabIds.clear();
-
-  setTimeout(resetState, 5000);
+  updateState({ status: "ready" });
 }
 
 async function cancelSearch() {
@@ -134,8 +89,27 @@ async function cancelSearch() {
   resetState();
 }
 
-async function forceSubmit() {
-  await submitToLLM();
+async function submit(userNote = "") {
+  const validResults = Array.from(collectedContent.values()).filter(
+    (r) => !r.blocked && r.content.length > 0,
+  );
+  console.log("[Background] Submitting", validResults.length, "valid results to LLM");
+
+  updateState({ status: "complete" });
+  browser.browserAction.setIcon({ path: "icon.svg" });
+
+  if (originTabId) {
+    try {
+      await browser.tabs.sendMessage(originTabId, {
+        type: "searchComplete",
+        results: validResults,
+        searchId: currentSearchId,
+        userNote: userNote,
+      });
+    } catch (e) {
+      console.log("[Background] Error sending results:", e);
+    }
+  }
 
   if (searchWindow) {
     try {
@@ -143,6 +117,12 @@ async function forceSubmit() {
     } catch (e) {}
     searchWindow = null;
   }
+
+  expectedCount = 0;
+  collectedContent.clear();
+  trackedTabIds.clear();
+
+  setTimeout(resetState, 5000);
 }
 
 browser.runtime.onMessage.addListener(async (message, sender) => {
@@ -161,12 +141,15 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     return;
   }
 
-  if (message.type === "forceSubmit") {
-    await forceSubmit();
+  if (message.type === "submit") {
+    await submit(message.userNote);
     return;
   }
 
   if (message.type === "openSearch") {
+    const result = await browser.storage.local.get("settings");
+    settings = { ...DEFAULT_SETTINGS, ...result.settings };
+
     currentSearchId = message.searchId;
     originTabId = sender.tab?.id;
     console.log("[Background] Search from tab:", originTabId);
@@ -208,6 +191,9 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
   }
 
   if (message.type === "searchResults") {
+    const result = await browser.storage.local.get("settings");
+    settings = { ...DEFAULT_SETTINGS, ...result.settings };
+
     const senderTabId = sender.tab?.id;
 
     // Only accept results from current DDG tab
@@ -239,9 +225,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       })),
     });
 
-    const timeout = settings.autoClose
-      ? settings.extractTimeout * 1000
-      : 600000;
+    const timeout = 600000;
     completionTimeout = setTimeout(() => {
       console.log(
         "[Background] Timeout with",
