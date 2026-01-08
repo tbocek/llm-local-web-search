@@ -17,7 +17,10 @@
 
       const timeout = setTimeout(() => {
         pendingSearches.delete(id);
-        resolve({ results: [{ title: "Timeout", url: "", content: "Search timed out" }], userNote: "" });
+        resolve({
+          results: [{ title: "Timeout", url: "", content: "Search timed out" }],
+          userNote: "",
+        });
       }, SEARCH_TIMEOUT);
 
       pendingSearches.set(id, { resolve, timeout });
@@ -73,6 +76,9 @@
 
     const parsed = parseSSE(fullResponse);
 
+    console.log("[Injected] RESPONSE parsed:", parsed);
+    console.log("[Injected] toolCalls found:", parsed.toolCalls.length);
+
     if (parsed.toolCalls.length > 0) {
       for (const call of parsed.toolCalls) {
         if (call.function.name === "web_search") {
@@ -82,9 +88,14 @@
           const { results, userNote } = await performSearch(args.query);
 
           const prefix = userNote ? `User note: ${userNote}\n\n` : "";
-          const resultText = prefix + results
-            .map((r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.content}\n`)
-            .join("\n---\n");
+          const resultText =
+            prefix +
+            results
+              .map(
+                (r, i) =>
+                  `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.content}\n`,
+              )
+              .join("\n---\n");
 
           console.log("[Injected] Sending results to LLM");
           const finalResponse = await sendToolResponse(
@@ -107,6 +118,8 @@
 
   async function sendToolResponse(url, originalOptions, toolCall, result) {
     const originalBody = JSON.parse(originalOptions.body);
+
+    console.log("[Injected] Original messages:", originalBody.messages.length);
 
     const messages = [
       ...originalBody.messages,
@@ -133,10 +146,18 @@
     const body = {
       ...originalBody,
       messages,
-      tools: undefined,
     };
 
-    return originalFetch(url, {
+    console.log(
+      "[Injected] Sending tool response, messages:",
+      body.messages.length,
+    );
+    console.log(
+      "[Injected] Tool response body:",
+      JSON.stringify(body, null, 2),
+    );
+
+    return window.fetch(url, {
       ...originalOptions,
       body: JSON.stringify(body),
     });
