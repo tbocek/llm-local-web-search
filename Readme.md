@@ -68,9 +68,7 @@ Settings available in extension options:
 |---------|---------|-------------|
 | URL Patterns | `localhost`, `127.0.0.1` | Which URLs to intercept |
 | Max Results | 10 | Search results to fetch (1-10) |
-| Auto-close | true | Close search window when done |
-| Extract Timeout | 10s | Seconds before auto-submit |
-| Extract Delay | 3000ms | Wait time before extracting page content |
+| Extract Delay | 5000ms | Max wait time before extracting page content |
 | Incognito Mode | false | Run searches in private windows |
 
 ## Dependencies
