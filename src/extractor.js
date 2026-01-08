@@ -5,9 +5,14 @@
 
   const result = await browser.storage.local.get("settings");
   const settings = result.settings || {};
-  const extractDelay = settings.extractDelay ?? 3000;
+  const maxWait = settings.extractDelay ?? DEFAULT_SETTINGS.extractDelay;
 
-  setTimeout(() => {
+  let extracted = false;
+
+  function extract() {
+    if (extracted) return;
+    extracted = true;
+
     try {
       const clone = document.cloneNode(true);
       const article = new Readability(clone).parse();
@@ -25,7 +30,7 @@
         return;
       }
 
-      let text = article.textContent.replace(/\s+/g, " ").trim();
+      const text = article.textContent.replace(/\s+/g, " ").trim();
       console.log("[Extractor] Content from:", location.href, "length:", text.length);
 
       browser.runtime.sendMessage({
@@ -46,7 +51,15 @@
         reason: "error",
       });
     }
-  }, extractDelay);
+  }
+
+  // Wait for browser idle (double callback for async content)
+  requestIdleCallback(() => {
+    requestIdleCallback(extract, { timeout: 1000 });
+  }, { timeout: maxWait });
+
+  // Max timeout fallback
+  setTimeout(extract, maxWait);
 
   console.log("[Extractor] Loaded on:", location.href);
 })();

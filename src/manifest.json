@@ -43,6 +43,7 @@
         "https://*/*"
       ],
       "js": [
+        "config.js",
         "Readability.js",
         "extractor.js"
       ],
