@@ -2,7 +2,7 @@ name: Publish to AMO
 on:
   push:
     tags:
-      - "[0-9]*"
+      - "v[0-9]*"
 jobs:
   publish:
     runs-on: ubuntu-latest
