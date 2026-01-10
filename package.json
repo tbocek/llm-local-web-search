@@ -1,6 +1,6 @@
 {
   "name": "llm-local-web-search",
-  "version": "0",
+  "version": "1",
   "repository": "https://github.com/tbocek/llm-local-web-search.git",
   "author": "Thomas Bocek <tom.llm-local-web-search@bocek.ch>",
   "license": "MIT",
