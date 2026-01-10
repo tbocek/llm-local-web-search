@@ -19,7 +19,7 @@ Other backends untested.
 ## How It Works
 
 1. Extension intercepts requests to `/v1/chat/completions`
-2. Injects `web_search` tool call into the request
+2. Injects `client_web_search` tool call into the request
 3. When LLM calls the tool, opens DuckDuckGo in a new window
 4. Extracts search results and page content via [Readability.js](https://github.com/mozilla/readability)
 5. Returns results to LLM as tool response

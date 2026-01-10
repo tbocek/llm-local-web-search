@@ -48,8 +48,8 @@
 
   window.fetch = async function (url, options) {
     //openwebui does not work yet: https://github.com/open-webui/open-webui/issues/20548
-    //if (!url.includes("/v1/chat/completions") && !url.includes("/api/chat/completions")) {
-    if (!url.includes("/v1/chat/completions")) {
+    if (!url.includes("/v1/chat/completions") && !url.includes("/api/chat/completions")) {
+    //if (!url.includes("/v1/chat/completions")) {
       return originalFetch.apply(this, arguments);
     }
 
@@ -83,7 +83,7 @@
 
     if (parsed.toolCalls.length > 0) {
       for (const call of parsed.toolCalls) {
-        if (call.function.name === "web_search") {
+        if (call.function.name === "client_web_search") {
           const args = JSON.parse(call.function.arguments);
           console.log("[Injected] Web search:", args.query);
 

@@ -2,7 +2,7 @@
   {
     "type": "function",
     "function": {
-      "name": "web_search",
+      "name": "client_web_search",
       "description": "Search the web for information",
       "parameters": {
         "type": "object",
