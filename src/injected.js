@@ -47,6 +47,8 @@
   const originalFetch = window.fetch;
 
   window.fetch = async function (url, options) {
+    //openwebui does not work yet: https://github.com/open-webui/open-webui/issues/20548
+    //if (!url.includes("/v1/chat/completions") && !url.includes("/api/chat/completions")) {
     if (!url.includes("/v1/chat/completions")) {
       return originalFetch.apply(this, arguments);
     }

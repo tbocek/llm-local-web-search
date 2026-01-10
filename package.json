@@ -1,15 +1,13 @@
 {
   "name": "llm-local-web-search",
-  "version": "0.5",
+  "version": "0",
   "repository": "https://github.com/tbocek/llm-local-web-search.git",
   "author": "Thomas Bocek <tom.llm-local-web-search@bocek.ch>",
   "license": "MIT",
   "scripts": {
     "lint": "web-ext lint --source-dir ./src",
     "build": "web-ext build --overwrite-dest --source-dir ./src -a ./bin",
-    "postinstall": "cp node_modules/@mozilla/readability/Readability.js src/",
-    "version:major": "./version-bump.sh major",
-    "version:minor": "./version-bump.sh minor"
+    "postinstall": "cp node_modules/@mozilla/readability/Readability.js src/"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0"

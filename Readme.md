@@ -1,6 +1,8 @@
 # LLM Web Search Extension - llm-local-web-search
 
-Firefox extension (prototype) that intercepts OpenAI-compatible API calls and adds client-side web search capability.
+[![Get the Add-on](https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg)](https://addons.mozilla.org/addon/llm-local-web-search/)
+
+Firefox extension that intercepts OpenAI-compatible API calls and adds client-side web search capability.
 
 ## Motivation
 
@@ -11,7 +13,8 @@ Server-side web search in LLMs sometimes fails with "could not fetch" errors due
 - No server-side fetching issues
 - Works offline with local LLMs
 
-Tested with [llama.cpp](https://github.com/ggml-org/llama.cpp). Other backends untested.
+Tested with [llama.cpp](https://github.com/ggml-org/llama.cpp). Open WebUI does not work with this extension due to [this](https://github.com/open-webui/open-webui/issues/20548).
+Other backends untested.
 
 ## How It Works
 
@@ -45,20 +48,7 @@ Click image to watch the demo on YouTube
 
 ## Installation
 
-This extension is available from the addon page (todo)
-
-For development:
-
-1. Clone with `git clone https://github.com/tbocek/llm-web-search`
-1. Open in Firefox `about:debugging#/runtime/this-firefox`
-1. Click "Load Temporary Add-on"
-1. Select `manifest.json`
-
-Build package/zip locally:
-
-```
-npx web-ext build --source-dir ./src -a ./bin
-```
+This extension is available from the [addon page](https://addons.mozilla.org/addon/llm-local-web-search/)
 
 ## Configuration
 
@@ -78,3 +68,18 @@ Settings available in extension options:
 ## Acknowledgments
 
 Built with assistance from Qwen3-next and Claude.ai.
+
+## For developers
+
+1. Clone with `git clone https://github.com/tbocek/llm-web-search`
+1. Open in Firefox `about:debugging#/runtime/this-firefox`
+1. Click "Load Temporary Add-on"
+1. Select `manifest.json`
+
+Build package/zip locally:
+
+```
+npx web-ext build --source-dir ./src -a ./bin
+```
+
+For a release, execute ```release.sh```, make sure everything is commited and working.

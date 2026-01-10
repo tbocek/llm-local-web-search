@@ -1,11 +1,11 @@
 name: Publish to AMO
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - "[0-9]*"
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -16,22 +16,9 @@ jobs:
           node-version: "lts/*"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - name: Bump version
-        id: version
-        run: |
-          NEW=$(bash ./version-bump.sh minor)
-          echo "version=$NEW" >> $GITHUB_OUTPUT
       - run: pnpm lint
-      - name: Commit, tag, and push
-        run: |
-          git config user.name 'github-actions'
-          git config user.email 'github-actions@github.com'
-          git add package.json src/manifest.json
-          git commit -m "Release v${{ steps.version.outputs.version }}"
-          git tag "v${{ steps.version.outputs.version }}"
-          git push && git push --tags
       - name: Publish to AMO
         run: pnpm web-ext sign --source-dir ./src --channel listed
         env:
-          WEB_EXT_API_KEY: ${{ secrets.AMO_API_KEY }}
-          WEB_EXT_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+          WEB_EXT_API_KEY: ${{ secrets.JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.JWT_SECRET }}
