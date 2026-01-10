@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "llm-local-web-search",
-  "version": "1",
+  "version": "2",
   "description": "Firefox extension that adds client-side web search for local LLMs. Intercepts OpenAI-compatible API calls, injects a web_search tool call, and fetches results directly in your browser. See what is going on, solve captchas yourself, bypass server-side fetch errors, works offline with llama.cpp",
   "permissions": [
     "http://*/*",
