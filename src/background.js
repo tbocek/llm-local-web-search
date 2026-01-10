@@ -93,7 +93,11 @@ async function submit(userNote = "") {
   const validResults = Array.from(collectedContent.values()).filter(
     (r) => !r.blocked && r.content.length > 0,
   );
-  console.log("[Background] Submitting", validResults.length, "valid results to LLM");
+  console.log(
+    "[Background] Submitting",
+    validResults.length,
+    "valid results to LLM",
+  );
 
   updateState({ status: "complete" });
   browser.browserAction.setIcon({ path: "icon.svg" });
@@ -173,9 +177,18 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     browser.browserAction.setIcon({ path: "icon_active.svg" });
 
     try {
+      const currentWindow = await browser.windows.getCurrent();
+      const width = Math.round(currentWindow.width / 3);
+      const height = Math.round(currentWindow.height / 3);
+
       const win = await browser.windows.create({
         url: `https://duckduckgo.com/?q=${encodeURIComponent(message.query)}`,
         incognito: settings.incognitoMode,
+        width: width,
+        height: height,
+        left: currentWindow.left + currentWindow.width - width,
+        top:
+          currentWindow.top + Math.round((currentWindow.height - height) / 2),
       });
 
       searchWindow = {
