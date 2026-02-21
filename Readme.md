@@ -4,6 +4,21 @@
 
 Firefox extension that intercepts OpenAI-compatible API calls and adds client-side web search capability.
 
+10.02.2026: Interesting news, the [WebMCP specification](https://webmachinelearning.github.io/webmcp/) is [available as an early preview for prototyping](https://developer.chrome.com/blog/webmcp-epp). WebMCP is a browser-native API that lets websites expose structured tools to AI agents via `navigator.modelContext`. Websites can register tools (with name, description, input schema, and an execute callback) that agents, browser agents, and assistive technologies can discover and invoke.
+
+**How this relates to llm-local-web-search:** This extension currently works by intercepting `fetch()` calls to OpenAI-compatible endpoints, injecting a `client_web_search` tool definition, opening DuckDuckGo in a popup window, scraping results via content scripts, extracting page content with Readability.js, and shuttling everything back through message passing. It's effective, but it's a complex pipeline of injected scripts, content scripts, background workers, and cross-context message relays.
+
+With WebMCP, a search engine like DuckDuckGo (or any website) could natively expose a `search` tool that an AI agent calls directly through the browser API. Content sites could expose a `getArticleContent` tool. The entire multi-window, multi-tab, scraping-and-extraction pipeline this extension implements would collapse into simple tool calls. No fetch interception, no DOM scraping, no popup windows, no content script bridges — just structured `navigator.modelContext` tool invocations.
+
+**What still needs to happen:** WebMCP is in early preview (available to early preview program participants only) and websites need to actually adopt it. Firefox has not announced support yet. What I do not see yet: the spec is designed for a browser-level agent to consume tools, not for arbitrary web pages to discover each other's tools cross-origin.
+
+WebMCP is a step in the right direction, but the current spec only defines how websites register tools, it doesn't address cross-site tool discovery or how an agent on one origin finds tools on another. Security considerations are not yet addressed in the spec, and getting cross-origin tool access right will be the hard part.
+
+**Alternatives and related approaches:**
+- [Anthropic's MCP](https://modelcontextprotocol.io/) — the backend-side protocol (JSON-RPC) for connecting AI to services via hosted servers. Complementary to WebMCP: MCP handles server-to-server, WebMCP handles browser-to-site.
+- [Browserbase MCP Server](https://github.com/browserbase/mcp-server-browserbase) — lets LLMs control a headless browser via MCP, similar concept to this extension but server-side.
+- Browser automation (Puppeteer/Playwright) — can achieve similar results but requires a headless browser instance, not client-side.
+
 ## Motivation
 
 Server-side web search in LLMs sometimes fails with "could not fetch" errors due to rate limiting, captchas, or blocked requests. This extension moves search to the client browser where:
