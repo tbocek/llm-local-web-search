@@ -1,10 +1,16 @@
-(async function () {
+(function () {
+  console.log("[Injected] Script starting");
   const toolsUrl = document.currentScript.dataset.toolsUrl;
+  console.log("[Injected] Tools URL:", toolsUrl);
 
-  const toolsResponse = await fetch(toolsUrl);
-  const tools = await toolsResponse.json();
-
-  console.log("[Injected] Loaded tools:", tools);
+  // Load tools lazily so we can patch fetch synchronously
+  let tools = null;
+  const toolsReady = fetch(toolsUrl)
+    .then((r) => r.json())
+    .then((t) => {
+      tools = t;
+      console.log("[Injected] Loaded tools:", tools);
+    });
 
   const SEARCH_TIMEOUT = 600000;
 
@@ -54,6 +60,7 @@
     }
 
     if (options?.body) {
+      await toolsReady;
       const body = JSON.parse(options.body);
 
       if (!body.messages?.some((m) => m.role === "tool")) {
@@ -66,57 +73,163 @@
 
     const response = await originalFetch.apply(this, arguments);
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullResponse = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      fullResponse += decoder.decode(value, { stream: true });
-    }
-
-    const parsed = parseSSE(fullResponse);
-
-    console.log("[Injected] RESPONSE parsed:", parsed);
-    console.log("[Injected] toolCalls found:", parsed.toolCalls.length);
-
-    if (parsed.toolCalls.length > 0) {
-      for (const call of parsed.toolCalls) {
-        if (call.function.name === "client_web_search") {
-          const args = JSON.parse(call.function.arguments);
-          console.log("[Injected] Web search:", args.query);
-
-          const { results, userNote } = await performSearch(args.query);
-
-          const prefix = userNote ? `User note: ${userNote}\n\n` : "";
-          const resultText =
-            prefix +
-            results
-              .map(
-                (r, i) =>
-                  `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.content}\n`,
-              )
-              .join("\n---\n");
-
-          console.log("[Injected] Sending results to LLM");
-          const finalResponse = await sendToolResponse(
-            url,
-            options,
-            call,
-            resultText,
-          );
-          return finalResponse;
+    // If not a streaming response, use the original buffered approach
+    if (!response.body) {
+      const text = await response.text();
+      const parsed = parseSSE(text);
+      if (parsed.toolCalls.length > 0) {
+        const call = parsed.toolCalls.find(
+          (tc) => tc.function.name === "client_web_search",
+        );
+        if (call) {
+          return handleToolCall(url, options, call);
         }
       }
+      return new Response(text, {
+        headers: response.headers,
+        status: response.status,
+        statusText: response.statusText,
+      });
     }
 
-    return new Response(fullResponse, {
+    // Streaming response: pipe chunks through to the UI in real-time,
+    // while also parsing for tool calls. If a tool call is detected,
+    // we handle the search and pipe the follow-up response into the
+    // same stream so the UI sees it as one continuous flow.
+    const sourceReader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let sseBuffer = "";
+
+    const outputStream = new ReadableStream({
+      async pull(controller) {
+        while (true) {
+          const { done, value } = await sourceReader.read();
+
+          if (done) {
+            controller.close();
+            return;
+          }
+
+          sseBuffer += decoder.decode(value, { stream: true });
+
+          // Check for tool calls as data arrives
+          const parsed = parseSSE(sseBuffer);
+          const searchCall = parsed.toolCalls.find(
+            (tc) => tc.function.name === "client_web_search",
+          );
+
+          if (searchCall) {
+            // Tool call detected — drain remaining chunks silently
+            while (true) {
+              const { done: d, value: dv } = await sourceReader.read();
+              if (d) break;
+              sseBuffer += decoder.decode(dv, { stream: true });
+            }
+
+            // Re-parse the complete buffer to get fully-streamed arguments
+            const complete = parseSSE(sseBuffer);
+            const completeCall = complete.toolCalls.find(
+              (tc) => tc.function.name === "client_web_search",
+            );
+
+            // Perform the search
+            const args = JSON.parse(completeCall.function.arguments);
+            console.log("[Injected] Web search:", args.query);
+            const { results, userNote } = await performSearch(args.query);
+            const prefix = userNote ? `User note: ${userNote}\n\n` : "";
+            const resultText =
+              prefix +
+              results
+                .map(
+                  (r, i) =>
+                    `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.content}\n`,
+                )
+                .join("\n---\n");
+
+            console.log("[Injected] Sending results to LLM");
+            // Make follow-up request with tool results
+            const followUp = await sendToolResponseRaw(
+              url,
+              options,
+              completeCall,
+              resultText,
+            );
+
+            // Pipe the follow-up response stream into our output
+            if (followUp.body) {
+              const followReader = followUp.body.getReader();
+              while (true) {
+                const { done: fd, value: fv } = await followReader.read();
+                if (fd) break;
+                controller.enqueue(fv);
+              }
+            }
+
+            controller.close();
+            return;
+          }
+
+          // No tool call yet — forward chunk to the UI immediately
+          controller.enqueue(value);
+          return; // yield control back so the UI can render this chunk
+        }
+      },
+    });
+
+    return new Response(outputStream, {
       headers: response.headers,
       status: response.status,
       statusText: response.statusText,
     });
   };
+
+  async function handleToolCall(url, options, call) {
+    const args = JSON.parse(call.function.arguments);
+    console.log("[Injected] Web search:", args.query);
+    const { results, userNote } = await performSearch(args.query);
+    const prefix = userNote ? `User note: ${userNote}\n\n` : "";
+    const resultText =
+      prefix +
+      results
+        .map(
+          (r, i) => `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.content}\n`,
+        )
+        .join("\n---\n");
+    console.log("[Injected] Sending results to LLM");
+    return sendToolResponse(url, options, call, resultText);
+  }
+
+  // sendToolResponseRaw uses originalFetch to avoid re-entering the patched fetch
+  async function sendToolResponseRaw(url, originalOptions, toolCall, result) {
+    const originalBody = JSON.parse(originalOptions.body);
+    const messages = [
+      ...originalBody.messages,
+      {
+        role: "assistant",
+        tool_calls: [
+          {
+            id: toolCall.id,
+            type: "function",
+            function: {
+              name: toolCall.function.name,
+              arguments: toolCall.function.arguments,
+            },
+          },
+        ],
+      },
+      {
+        role: "tool",
+        tool_call_id: toolCall.id,
+        content: result,
+      },
+    ];
+    const body = { ...originalBody, messages };
+    delete body.tools;
+    return originalFetch(url, {
+      ...originalOptions,
+      body: JSON.stringify(body),
+    });
+  }
 
   async function sendToolResponse(url, originalOptions, toolCall, result) {
     const originalBody = JSON.parse(originalOptions.body);
@@ -149,6 +262,7 @@
       ...originalBody,
       messages,
     };
+    delete body.tools;
 
     console.log(
       "[Injected] Sending tool response, messages:",
