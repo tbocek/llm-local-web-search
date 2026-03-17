@@ -98,3 +98,64 @@ npx web-ext build --source-dir ./src -a ./bin
 ```
 
 For a release, execute ```release.sh```, make sure everything is commited and working.
+
+## Architecture
+
+### Classical MCP flow
+
+In a typical MCP setup, the application (MCP client) connects to an MCP server, discovers tools, and orchestrates tool calls between the user, the LLM, and the MCP server:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as Your App / llama.cpp frontend (MCP Client)
+    participant MCP as MCP Server
+    participant LLM as llama.cpp<br>/v1/chat/completions
+
+    Note over App,MCP: Only on first connection
+    App->>MCP: tools/list
+    MCP-->>App: [{name:"measure_endpoint", ...}]
+    Note over User,LLM: Recurring — every user request
+    User->>App: "How fast is api.example.com/health?"
+    App->>LLM: POST /v1/chat/completions<br>(messages + tool definitions)
+    LLM-->>App: tool_call: measure_endpoint(url:"api.example.com/health")
+    App->>MCP: tools/call("measure_endpoint", {url:"api.example.com/health"})
+    MCP-->>App: {content: "200 OK, 142ms"}
+    App->>LLM: POST /v1/chat/completions<br>(messages + tool result)
+    LLM-->>App: "api.example.com/health responded in 142ms with 200 OK"
+    App-->>User: "api.example.com/health responded in 142ms with 200 OK"
+```
+
+### llm-local-web-search flow
+
+This extension acts as an invisible middleware between the frontend and the LLM by intercepting `fetch()` calls in the browser. There is no MCP server — the extension itself handles tool injection, tool execution (via browser-based web search), and result forwarding:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as llama.cpp frontend
+    participant Ext as Extension (injected.js)
+    participant LLM as llama.cpp<br>/v1/chat/completions
+    participant BG as Background Script
+    participant DDG as DuckDuckGo<br>(popup window)
+
+    Note over App,Ext: On page load
+    Ext->>Ext: Patch window.fetch<br>Load tool definitions from tools.json
+
+    Note over User,DDG: Recurring — every user request
+    User->>App: "What is the mass of Jupiter?"
+    App->>Ext: fetch("/v1/chat/completions", {messages})
+    Note over Ext: Intercepts fetch, injects<br>client_web_search tool definition
+    Ext->>LLM: originalFetch("/v1/chat/completions",<br>{messages + tools})
+    LLM-->>Ext: tool_call: client_web_search(query:"mass of Jupiter")
+    Ext->>BG: postMessage("llm-open-search",<br>query:"mass of Jupiter")
+    BG->>DDG: Open DuckDuckGo in popup window
+    DDG-->>BG: Search results (URLs + titles)
+    BG->>BG: Open result URLs in tabs,<br>extract content via Readability.js
+    BG-->>Ext: postMessage("llm-search-complete",<br>{results})
+    Ext->>LLM: originalFetch("/v1/chat/completions",<br>{messages + tool result})
+    LLM-->>Ext: "Jupiter's mass is approximately<br>1.898 × 10²⁷ kg"
+    Note over Ext: Pipes response back through<br>the original fetch stream
+    Ext-->>App: Response (streamed transparently)
+    App-->>User: "Jupiter's mass is approximately<br>1.898 × 10²⁷ kg"
+```

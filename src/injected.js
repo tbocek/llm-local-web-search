@@ -53,8 +53,11 @@
   const originalFetch = window.fetch;
 
   window.fetch = async function (url, options) {
+    // Normalize url: fetch() accepts a string, URL, or Request object
+    const urlStr = typeof url === "string" ? url : url instanceof Request ? url.url : String(url);
+
     //openwebui does not work yet: https://github.com/open-webui/open-webui/issues/20548
-    if (!url.includes("/v1/chat/completions") && !url.includes("/api/chat/completions")) {
+    if (!urlStr.includes("/v1/chat/completions") && !urlStr.includes("/api/chat/completions")) {
     //if (!url.includes("/v1/chat/completions")) {
       return originalFetch.apply(this, arguments);
     }
@@ -68,7 +71,7 @@
       }
 
       options.body = JSON.stringify(body);
-      console.log("[Injected] REQUEST:", url);
+      console.log("[Injected] REQUEST:", urlStr);
     }
 
     const response = await originalFetch.apply(this, arguments);
