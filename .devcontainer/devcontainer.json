@@ -1,0 +1,12 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "runArgs": ["--add-host", "host.docker.internal:host-gateway", "--name", "codehalter-${localWorkspaceFolderBasename}"],
+  "containerEnv": { "DEVCONTAINER": "true" },
+  "remoteUser": "dev",
+  "mounts": [
+    "source=${localEnv:HOME}/.config/codehalter,target=/home/dev/.config/codehalter,type=bind,readonly",
+    "source=${localWorkspaceFolder}/.git,target=${containerWorkspaceFolder}/.git,type=bind,readonly"
+  ]
+}
