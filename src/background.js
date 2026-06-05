@@ -139,10 +139,42 @@ async function submit(userNote = "") {
   setTimeout(resetState, 5000);
 }
 
-// Open a DDG search window for `query`, positioned bottom-right at 1/3 size, and
-// record it as the active searchWindow. Returns the created window, or null on
-// failure. Shared by the initial search and the narrow→medium→broad escalation.
+// Open (or reuse) a DDG search window for `query`. If a live search window
+// already exists — from a previous escalation level or an earlier search — we
+// REUSE it: close every tab except the persistent DDG search tab and navigate
+// that tab to the new query. This avoids closing and reopening the window, which
+// used to churn the single searchWindow global and scatter result tabs into
+// another window. Falls back to creating a fresh window (positioned bottom-right
+// at 1/3 size) when no reusable window is available. Returns the window, or null.
 async function openSearchWindow(query, targetWindowId) {
+  const url = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+
+  // Reuse path: navigate the existing DDG tab instead of opening a new window.
+  if (searchWindow) {
+    try {
+      const win = await browser.windows.get(searchWindow.windowId, {
+        populate: true,
+      });
+      const ddgTab = win.tabs.find((t) => t.id === searchWindow.ddgTabId);
+      if (ddgTab) {
+        // Drop the previous run's result tabs, keep only the DDG search tab.
+        const stale = win.tabs
+          .filter((t) => t.id !== ddgTab.id)
+          .map((t) => t.id);
+        if (stale.length) {
+          await browser.tabs.remove(stale);
+        }
+        await browser.tabs.update(ddgTab.id, { url, active: true });
+        return win;
+      }
+      // DDG tab is gone — leave this window untouched and open a fresh one.
+      searchWindow = null;
+    } catch (e) {
+      // Window no longer exists — open a fresh one.
+      searchWindow = null;
+    }
+  }
+
   try {
     let currentWindow;
     if (targetWindowId) {
@@ -154,7 +186,7 @@ async function openSearchWindow(query, targetWindowId) {
     const height = Math.round(currentWindow.height / 3);
 
     const win = await browser.windows.create({
-      url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+      url: url,
       incognito: settings.incognitoMode,
       width: width,
       height: height,
@@ -164,7 +196,7 @@ async function openSearchWindow(query, targetWindowId) {
 
     searchWindow = {
       windowId: win.id,
-      tabId: win.tabs[0].id,
+      ddgTabId: win.tabs[0].id,
     };
     return win;
   } catch (e) {
@@ -241,7 +273,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     const senderTabId = sender.tab?.id;
 
     // Only accept results from current DDG tab
-    if (!searchWindow || senderTabId !== searchWindow.tabId) {
+    if (!searchWindow || senderTabId !== searchWindow.ddgTabId) {
       console.log(
         "[Background] Ignoring stale searchResults from tab:",
         senderTabId,
@@ -270,18 +302,8 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           nextQuery,
         );
 
-        // Close current DDG tab (which closes its window) — mark it so the
-        // onRemoved handler doesn't mistake this for a user abort.
-        try {
-          if (searchWindow) {
-            expectedWindowCloses.add(searchWindow.windowId);
-            await browser.tabs.remove(searchWindow.tabId);
-          }
-        } catch (e) {
-          console.log("[Background] Error closing tab:", e);
-        }
-
-        // Open a new DDG window with the next query
+        // Reuse the existing search window: openSearchWindow navigates the DDG
+        // tab to the next query rather than closing and reopening the window.
         const win = await openSearchWindow(nextQuery, originWindowId);
         if (win) {
           updateState({ query: nextQuery, windowId: win.id });
@@ -363,9 +385,9 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     // Pin every result tab to ONE window — the search window. Capture its id
     // once (an interleaving message can reassign searchWindow mid-loop and
     // scatter the tabs), and verify it's still alive: tabs.create with a closed
-    // windowId silently lands in the user's focused window. If the search window
-    // was closed (escalation churn / manual close), open a fresh dedicated one
-    // and drop its blank starter tab once the result tabs are in.
+    // windowId silently lands in the user's focused window. If the user closed
+    // the search window mid-extraction, open a fresh dedicated one and drop its
+    // blank starter tab once the result tabs are in.
     let targetWindowId = searchWindow.windowId;
     let starterTabId = null;
     try {
@@ -386,7 +408,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       });
       targetWindowId = win.id;
       starterTabId = win.tabs[0].id;
-      searchWindow = { windowId: win.id, tabId: null };
+      searchWindow = { windowId: win.id, ddgTabId: null };
     }
 
     const tabs = [];
@@ -396,6 +418,21 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         windowId: targetWindowId,
         active: i === 0,
       });
+
+      // tabs.create silently retargets to the focused window if targetWindowId
+      // is no longer valid — relocate any stray so the whole batch stays in the
+      // search window rather than scattering into the user's other windows.
+      if (tab.windowId !== targetWindowId) {
+        try {
+          await browser.tabs.move(tab.id, {
+            windowId: targetWindowId,
+            index: -1,
+          });
+        } catch (e) {
+          console.log("[Background] Could not relocate result tab:", e);
+        }
+      }
+
       tabs.push(tab);
       trackedTabIds.add(tab.id);
 
@@ -419,8 +456,9 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         console.log("[Background] Tab grouping not supported:", e);
       }
     }
-
-    searchWindow.tabId = tabs[0]?.id;
+    // Note: searchWindow.ddgTabId is intentionally left pointing at the DDG
+    // search tab — it must stay stable so the next search/escalation can reuse
+    // this window and so searchResults gating keeps matching the DDG tab.
   }
 
   if (message.type === "pageContent") {
