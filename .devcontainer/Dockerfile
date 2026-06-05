@@ -5,7 +5,7 @@ RUN apk update && apk add --no-cache \
         ca-certificates curl git sudo \
         bash shadow \
         go \
-        nodejs npm \
+        nodejs npm openssh-client jq\
         firefox-esr
 
 RUN groupadd --gid 1000 dev \
