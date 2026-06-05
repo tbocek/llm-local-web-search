@@ -5,7 +5,7 @@ RUN apk update && apk add --no-cache \
         ca-certificates curl git sudo \
         bash shadow \
         go \
-        npm \
+        nodejs npm \
         firefox-esr
 
 RUN groupadd --gid 1000 dev \
@@ -16,5 +16,9 @@ RUN groupadd --gid 1000 dev \
 ENV GOBIN=/usr/local/bin
 ENV GOTOOLCHAIN=auto
 RUN GOPROXY=direct go install github.com/tbocek/codehalter@latest
+
+RUN npm install -g prettier pnpm
+
+RUN pnpm add -D @mizchi/lsmcp @typescript/native-preview && npx @mizchi/lsmcp init -p tsgo
 
 USER dev

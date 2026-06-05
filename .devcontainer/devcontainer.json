@@ -3,10 +3,12 @@
     "dockerfile": "Dockerfile"
   },
   "runArgs": ["--add-host", "host.docker.internal:host-gateway", "--name", "codehalter-${localWorkspaceFolderBasename}"],
-  "containerEnv": { "DEVCONTAINER": "true" },
+  "containerEnv": { "DEVCONTAINER": "true", "SSH_AUTH_SOCK": "/ssh-agent" },
   "remoteUser": "dev",
   "mounts": [
     "source=${localEnv:HOME}/.config/codehalter,target=/home/dev/.config/codehalter,type=bind,readonly",
-    "source=${localWorkspaceFolder}/.git,target=${containerWorkspaceFolder}/.git,type=bind,readonly"
+    "source=${localWorkspaceFolder}/.git,target=${containerWorkspaceFolder}/.git,type=bind",
+    "source=${localEnv:HOME}/.gitconfig,target=/home/dev/.gitconfig,type=bind,readonly",
+    "source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind"
   ]
 }
