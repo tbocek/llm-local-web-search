@@ -27,7 +27,7 @@
   function trySend() {
     if (sent) return;
     const results = extractResults();
-    if (results.length > 0) {
+    if (true) {
       console.log("[DDG] Found", results.length, "results");
       browser.runtime.sendMessage({
         type: "searchResults",

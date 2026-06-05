@@ -31,7 +31,7 @@
     if (event.data?.type === "llm-open-search") {
       browser.runtime.sendMessage({
         type: "openSearch",
-        query: event.data.query,
+        queries: event.data.queries,
         searchId: event.data.searchId,
       });
     }
@@ -44,7 +44,7 @@
           type: "llm-search-complete",
           results: message.results,
           searchId: message.searchId,
-           userNote: message.userNote, 
+           userNote: message.userNote,
         },
         "*",
       );

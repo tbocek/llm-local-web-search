@@ -17,7 +17,7 @@
   let searchId = 0;
   const pendingSearches = new Map();
 
-  function performSearch(query) {
+  function performSearch(queries) {
     return new Promise((resolve) => {
       const id = ++searchId;
 
@@ -31,7 +31,7 @@
 
       pendingSearches.set(id, { resolve, timeout });
 
-      window.postMessage({ type: "llm-open-search", query, searchId: id }, "*");
+      window.postMessage({ type: "llm-open-search", queries, searchId: id }, "*");
     });
   }
 
@@ -137,8 +137,12 @@
 
             // Perform the search
             const args = JSON.parse(completeCall.function.arguments);
-            console.log("[Injected] Web search:", args.query);
-            const { results, userNote } = await performSearch(args.query);
+            console.log("[Injected] Web search:", args.narrow);
+            const { results, userNote } = await performSearch({
+              narrow: args.narrow,
+              medium: args.medium,
+              broad: args.broad,
+            });
             const prefix = userNote ? `User note: ${userNote}\n\n` : "";
             const resultText =
               prefix +
@@ -188,8 +192,12 @@
 
   async function handleToolCall(url, options, call) {
     const args = JSON.parse(call.function.arguments);
-    console.log("[Injected] Web search:", args.query);
-    const { results, userNote } = await performSearch(args.query);
+    console.log("[Injected] Web search:", args.narrow);
+    const { results, userNote } = await performSearch({
+      narrow: args.narrow,
+      medium: args.medium,
+      broad: args.broad,
+    });
     const prefix = userNote ? `User note: ${userNote}\n\n` : "";
     const resultText =
       prefix +

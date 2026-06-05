@@ -1,19 +1,27 @@
 [
-  {
-    "type": "function",
-    "function": {
-      "name": "client_web_search",
-      "description": "Search the web for information",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "The search query"
-          }
-        },
-        "required": ["query"]
-      }
+    {
+        "type": "function",
+        "function": {
+            "name": "client_web_search",
+            "description": "Search the web to verify facts, find obscure information, or resolve ambiguous queries. Use when the requested information is not common knowledge, appears highly specific or unusual, or when you need to confirm the existence and details of entities (e.g., specific names, codes, or niche topics). Start with the most specific search term, then broaden if necessary.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "narrow": {
+                        "type": "string",
+                        "description": "The most specific search query."
+                    },
+                    "medium": {
+                        "type": "string",
+                        "description": "A moderately specific fallback query."
+                    },
+                    "broad": {
+                        "type": "string",
+                        "description": "A broad fallback query."
+                    }
+                },
+                "required": ["narrow", "medium", "broad"]
+            }
+        }
     }
-  }
 ]
