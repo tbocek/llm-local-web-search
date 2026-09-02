@@ -1,5 +1,5 @@
 # codehalter bootstrap assisted
-FROM alpine:3.23
+FROM alpine:3.24
 
 RUN apk update && apk add --no-cache \
         ca-certificates curl git sudo \
@@ -18,7 +18,5 @@ ENV GOTOOLCHAIN=auto
 RUN GOPROXY=direct go install github.com/tbocek/codehalter@latest
 
 RUN npm install -g prettier pnpm
-
-RUN pnpm add -D @mizchi/lsmcp @typescript/native-preview && npx @mizchi/lsmcp init -p tsgo
 
 USER dev

@@ -1,8 +1,8 @@
 (async function () {
   const result = await browser.storage.local.get("settings");
-  const settings = result.settings || {};
-  const maxResults = result.settings.maxResults;
-  const extractDelay = settings.extractDelay ?? 3000;
+  const settings = result.settings || DEFAULT_SETTINGS;
+  const maxResults = settings.maxResults;
+  const extractDelay = settings.extractDelay ?? DEFAULT_SETTINGS.extractDelay;
 
   function extractResults() {
     const links = [];
@@ -27,7 +27,7 @@
   function trySend() {
     if (sent) return;
     const results = extractResults();
-    if (true) {
+    if (results.length > 0) {
       console.log("[DDG] Found", results.length, "results");
       browser.runtime.sendMessage({
         type: "searchResults",

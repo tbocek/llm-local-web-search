@@ -65,7 +65,11 @@
 
         const url = document.createElement("div");
         url.className = "site-url";
-        url.textContent = new URL(site.url).hostname;
+        let host = site.url;
+        try {
+            host = new URL(site.url).hostname;
+        } catch (e) {}
+        url.textContent = host;
 
         const status = document.createElement("span");
         status.className = "site-status " + site.status;

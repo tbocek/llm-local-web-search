@@ -11,6 +11,7 @@ let searchWindow = null;
 let collectedContent = new Map();
 let expectedCount = 0;
 let completionTimeout = null;
+let resetTimer = null;
 let originTabId = null;
 let trackedTabIds = new Set();
 let currentSearchId = null;
@@ -136,7 +137,10 @@ async function submit(userNote = "") {
   collectedContent.clear();
   trackedTabIds.clear();
 
-  setTimeout(resetState, 5000);
+  resetTimer = setTimeout(() => {
+    resetTimer = null;
+    resetState();
+  }, 5000);
 }
 
 // Open (or reuse) a DDG search window for `query`. If a live search window
@@ -244,6 +248,11 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       completionTimeout = null;
     }
 
+    if (resetTimer) {
+      clearTimeout(resetTimer);
+      resetTimer = null;
+    }
+
     currentQueries = message.queries;
     currentQueryLevel = "narrow";
 
@@ -344,7 +353,10 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           searchWindow = null;
         }
 
-        setTimeout(resetState, 5000);
+        resetTimer = setTimeout(() => {
+          resetTimer = null;
+          resetState();
+        }, 5000);
         return;
       }
     }

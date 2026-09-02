@@ -66,9 +66,7 @@
       await toolsReady;
       const body = JSON.parse(options.body);
 
-      if (!body.messages?.some((m) => m.role === "tool")) {
-        body.tools = tools;
-      }
+      body.tools = tools;
 
       options.body = JSON.stringify(body);
       console.log("[Injected] REQUEST:", urlStr);
@@ -235,7 +233,6 @@
       },
     ];
     const body = { ...originalBody, messages };
-    delete body.tools;
     return originalFetch(url, {
       ...originalOptions,
       body: JSON.stringify(body),
@@ -273,7 +270,6 @@
       ...originalBody,
       messages,
     };
-    delete body.tools;
 
     console.log(
       "[Injected] Sending tool response, messages:",

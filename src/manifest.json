@@ -33,6 +33,7 @@
         "https://duckduckgo.com/*"
       ],
       "js": [
+        "config.js",
         "duckduckgo.js"
       ],
       "run_at": "document_idle"
